@@ -1,0 +1,13 @@
+papermill
+prefect
+jupyterlab
+matplotlib
+plotly
+numpy
+notebook
+yfinance
+cufflinks
+ipywidgets
+scikit-learn
+xgboost
+ipdb

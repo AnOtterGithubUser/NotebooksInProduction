@@ -1,0 +1,6 @@
+.ipynb_checkpoints/
+data/01_raw/*
+data/02_clean/*
+data/03_predictions/*
+artifacts/*
+outputs/*
