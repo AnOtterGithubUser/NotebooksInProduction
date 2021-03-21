@@ -6,7 +6,7 @@ import datetime
 
 
 schedule = IntervalSchedule(
-    start_date=datetime.datetime.strptime("2021-03-17-08-00-00", "%Y-%m-%d-%H-%M-%S"),
+    start_date=datetime.datetime.utcnow() + datetime.timedelta(seconds=10),
     interval=datetime.timedelta(days=1)
 )
 
