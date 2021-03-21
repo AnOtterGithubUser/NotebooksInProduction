@@ -11,3 +11,6 @@ ipywidgets
 scikit-learn
 xgboost
 ipdb
+pystan
+fbprophet
+

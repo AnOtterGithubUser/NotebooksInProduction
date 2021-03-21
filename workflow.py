@@ -6,7 +6,7 @@ import datetime
 
 
 schedule = IntervalSchedule(
-    start_date=datetime.datetime.utcnow() + datetime.timedelta(seconds=10),
+    start_date=datetime.datetime.utcnow() + datetime.timedelta(seconds=5),
     interval=datetime.timedelta(days=1)
 )
 
@@ -39,10 +39,10 @@ def transform_data(upstream_task):
                                     "EXECUTION_DATE": datetime.datetime.now().strftime("%Y-%m-%d")})
     
 @task
-def predict(upstream_task):
+def predict_linear_regression(upstream_task):
     pm.execute_notebook("./03_predictions.ipynb",
-                        "./outputs/03_predictions_%s.ipynb" % datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S"),
-                        parameters={"MODEL_PATH": "artifacts/2021-03-14/",
+                        "./outputs/03_predictions_linear_regression_%s.ipynb" % datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S"),
+                        parameters={"MODEL_PATH": "artifacts/2021-03-18/",
                                     "MODEL_NAME": "LinearRegression",
                                     "MODEL_EXTENSION": ".joblib",
                                     "DATA_DIR": "data",
@@ -50,15 +50,51 @@ def predict(upstream_task):
                                     "INPUT_DIRNAME": "02_clean",
                                     "INPUT_FILENAME": "clean_data.csv",
                                     "OUTPUT_DIRNAME": "03_predictions",
-                                    "OUTPUT_FILENAME": "predictions.csv",
+                                    "OUTPUT_FILENAME": "predictions_linear_regression.csv",
                                     "DAY_PLUS_1": "DAY_PLUS_1",
                                     "DAY_PLUS_7": "DAY_PLUS_7",
                                     "DAY_PLUS_30": "DAY_PLUS_30",
                                     "EXECUTION_DATE": datetime.datetime.now().strftime("%Y-%m-%d"),
-                                    "NB_DAYS": 5})
+                                    "NB_DAYS": 7})
     
 @task
-def compute_metrics(upstream_task):
+def predict_gradient_boosting(upstream_task):
+    pm.execute_notebook("./03_predictions.ipynb",
+                        "./outputs/03_predictions_gradient_boosting_%s.ipynb" % datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S"),
+                        parameters={"MODEL_PATH": "artifacts/2021-03-18/",
+                                    "MODEL_NAME": "GradientBoostingRegressor",
+                                    "MODEL_EXTENSION": ".joblib",
+                                    "DATA_DIR": "data",
+                                    "DATE_FORMAT": "%Y-%m-%d",
+                                    "INPUT_DIRNAME": "02_clean",
+                                    "INPUT_FILENAME": "clean_data.csv",
+                                    "OUTPUT_DIRNAME": "03_predictions",
+                                    "OUTPUT_FILENAME": "predictions_gradient_boosting.csv",
+                                    "DAY_PLUS_1": "DAY_PLUS_1",
+                                    "DAY_PLUS_7": "DAY_PLUS_7",
+                                    "DAY_PLUS_30": "DAY_PLUS_30",
+                                    "EXECUTION_DATE": datetime.datetime.now().strftime("%Y-%m-%d"),
+                                    "NB_DAYS": 7})
+    
+@task
+def predict_prophet(upstream_task):
+    pm.execute_notebook("./03_predictions_prophet.ipynb",
+                        "./outputs/03_predictions_prophet_%s.ipynb" % datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S"),
+                        parameters={"MODEL_PATH": "artifacts/2021-03-18/",
+                                    "MODEL_NAME": "prophet.json",
+                                    "DATA_DIR": "data",
+                                    "DATE_FORMAT": "%Y-%m-%d",
+                                    "INPUT_DIRNAME": "02_clean",
+                                    "INPUT_FILENAME": "clean_data.csv",
+                                    "OUTPUT_DIRNAME": "03_predictions",
+                                    "OUTPUT_FILENAME": "predictions_prophet.csv",
+                                    "DAY_PLUS_1": "DAY_PLUS_1",
+                                    "DAY_PLUS_7": "DAY_PLUS_7",
+                                    "DAY_PLUS_30": "DAY_PLUS_30",
+                                    "EXECUTION_DATE": datetime.datetime.now().strftime("%Y-%m-%d")})
+    
+@task
+def compute_metrics(**upstream_task):
     pm.execute_notebook("./04_metrics.ipynb",
                         "./outputs/04_metrics_%s.ipynb" % datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S"),
                         parameters={"EXECUTION_DATE": datetime.datetime.now().strftime("%Y-%m-%d"),
@@ -76,7 +112,9 @@ def compute_metrics(upstream_task):
 with Flow("btc_pipeline", schedule=schedule) as flow:
     data = fetch_data()
     transformed_data = transform_data(data)
-    predictions = predict(transformed_data)
-    metrics = compute_metrics(predictions)
+    predictions_linear_regression = predict_linear_regression(transformed_data)
+    predictions_gradient_boosting = predict_gradient_boosting(transformed_data)
+    predictions_prophet = predict_prophet(transformed_data)
+    metrics = compute_metrics(pred_lr=predictions_linear_regression, pred_gb=predictions_gradient_boosting, pred_prophet=predictions_prophet)
     
 flow.run()
